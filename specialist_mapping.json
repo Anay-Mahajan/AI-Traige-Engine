@@ -1,0 +1,23 @@
+{
+    "UNKNOWN_OR_LOW_CONFIDENCE": "General Physician",
+    "Common Cold": "General Physician",
+    "Influenza (Flu)": "General Physician",
+    "COVID-19": "General Physician",
+    "Bronchitis": "Pulmonologist",
+    "Fungal Infection": "Dermatologist",
+    "Eczema": "Dermatologist",
+    "Psoriasis": "Dermatologist",
+    "Acne": "Dermatologist",
+    "GERD": "Gastroenterologist",
+    "Peptic Ulcer": "Gastroenterologist",
+    "Gastroenteritis": "Gastroenterologist",
+    "Allergy": "Allergist",
+    "Asthma": "Pulmonologist",
+    "Migraine": "Neurologist",
+    "Hypertension": "Cardiologist",
+    "Type 2 Diabetes": "Endocrinologist",
+    "Urinary Tract Infection": "Urologist",
+    "Osteoarthritis": "Rheumatologist",
+    "Conjunctivitis (Pink Eye)": "Ophthalmologist",
+    "Tonsillitis": "ENT Specialist"
+}
