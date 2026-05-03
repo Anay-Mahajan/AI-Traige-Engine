@@ -1,0 +1,29 @@
+Overall Accuracy: 79.80%
+
+Classification Report (Precision, Recall, F1-Score):
+                           precision    recall  f1-score   support
+
+                     Acne       0.82      0.77      0.80       122
+                  Allergy       0.82      0.83      0.82       103
+                   Asthma       0.86      0.86      0.86        99
+               Bronchitis       0.77      0.66      0.71        95
+                 COVID-19       0.68      0.71      0.69        78
+              Common Cold       0.77      0.88      0.82        97
+Conjunctivitis (Pink Eye)       0.87      0.81      0.84       107
+                   Eczema       0.80      0.87      0.84       102
+         Fungal Infection       0.78      0.69      0.73        90
+                     GERD       0.64      0.65      0.65        95
+          Gastroenteritis       0.88      0.87      0.87       115
+             Hypertension       0.68      0.60      0.64       102
+          Influenza (Flu)       0.81      0.82      0.82       101
+                 Migraine       0.73      0.81      0.77        91
+           Osteoarthritis       0.79      0.81      0.80        96
+             Peptic Ulcer       0.76      0.86      0.81       105
+                Psoriasis       0.87      0.76      0.81       103
+              Tonsillitis       0.91      0.90      0.90       117
+          Type 2 Diabetes       0.80      0.85      0.83        92
+  Urinary Tract Infection       0.86      0.91      0.89        90
+
+                 accuracy                           0.80      2000
+                macro avg       0.79      0.80      0.79      2000
+             weighted avg       0.80      0.80      0.80      2000

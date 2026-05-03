@@ -1,55 +1,116 @@
 import pandas as pd
+import numpy as np
 import random
 import json
 from sklearn.model_selection import train_test_split
 
-print("Initializing V3 Controlled Ambiguity Generator...\n")
+print("Initializing V4 Realistic Symptom Generator...\n")
 
-# 1. The Overlapping Knowledge Base
-# Notice how diseases in the same "cluster" now share mandatory symptoms.
+# 1. The Overlapping Knowledge Base with Explicit Probabilities
+# Format: 'symptom_name': probability (0.0 to 1.0)
 clinical_knowledge = {
-    # --- RESPIRATORY CLUSTER (The model will confuse these) ---
-    'Common Cold': {'specialist': 'General Physician', 'mandatory': ['cough', 'fatigue', 'loss_of_smell'], 'optional': ['runny_nose', 'continuous_sneezing', 'sore_throat', 'mild_fever']},
-    'Influenza (Flu)': {'specialist': 'General Physician', 'mandatory': ['cough', 'high_fever', 'fatigue'], 'optional': ['chills', 'headache', 'muscle_pain']},
-    'COVID-19': {'specialist': 'General Physician', 'mandatory': ['cough', 'fatigue'], 'optional': ['loss_of_smell', 'loss_of_taste', 'high_fever', 'breathlessness']},
-    'Bronchitis': {'specialist': 'Pulmonologist', 'mandatory': ['cough'], 'optional': ['mucoid_sputum', 'chest_pain', 'mild_fever']},
+    # --- RESPIRATORY CLUSTER ---
+    'Common Cold': {
+        'specialist': 'General Physician', 
+        'symptoms': {'cough': 0.95, 'fatigue': 0.85, 'loss_of_smell': 0.15, 'runny_nose': 0.90, 'continuous_sneezing': 0.80, 'sore_throat': 0.70, 'mild_fever': 0.60}
+    },
+    'Influenza (Flu)': {
+        'specialist': 'General Physician', 
+        'symptoms': {'cough': 0.90, 'high_fever': 0.95, 'fatigue': 0.95, 'chills': 0.80, 'headache': 0.75, 'muscle_pain': 0.85}
+    },
+    'COVID-19': {
+        'specialist': 'General Physician', 
+        'symptoms': {'cough': 0.85, 'fatigue': 0.85, 'loss_of_smell': 0.60, 'loss_of_taste': 0.60, 'high_fever': 0.70, 'breathlessness': 0.40, 'muscle_pain': 0.50}
+    },
+    'Bronchitis': {
+        'specialist': 'Pulmonologist', 
+        'symptoms': {'cough': 0.98, 'mucoid_sputum': 0.80, 'chest_pain': 0.60, 'mild_fever': 0.50, 'fatigue': 0.60}
+    },
     
-    # --- SKIN CLUSTER (The model will confuse these) ---
-    'Fungal Infection': {'specialist': 'Dermatologist', 'mandatory': ['skin_rash', 'itching'], 'optional': ['nodal_skin_eruptions', 'dischromic_patches']},
-    'Eczema': {'specialist': 'Dermatologist', 'mandatory': ['skin_rash', 'itching'], 'optional': ['dry_skin', 'red_spots_over_body']},
-    'Psoriasis': {'specialist': 'Dermatologist', 'mandatory': ['skin_rash', 'itching'], 'optional': ['skin_peeling', 'silver_like_dusting', 'joint_pain']},
-    'Acne': {'specialist': 'Dermatologist', 'mandatory': ['skin_rash'], 'optional': ['pus_filled_pimples', 'blackheads', 'scurring']},
+    # --- SKIN CLUSTER ---
+    'Fungal Infection': {
+        'specialist': 'Dermatologist', 
+        'symptoms': {'skin_rash': 0.95, 'itching': 0.95, 'nodal_skin_eruptions': 0.60, 'dischromic_patches': 0.50}
+    },
+    'Eczema': {
+        'specialist': 'Dermatologist', 
+        'symptoms': {'skin_rash': 0.90, 'itching': 0.98, 'dry_skin': 0.90, 'red_spots_over_body': 0.70}
+    },
+    'Psoriasis': {
+        'specialist': 'Dermatologist', 
+        'symptoms': {'skin_rash': 0.90, 'itching': 0.70, 'skin_peeling': 0.85, 'silver_like_dusting': 0.80, 'joint_pain': 0.30}
+    },
+    'Acne': {
+        'specialist': 'Dermatologist', 
+        'symptoms': {'skin_rash': 0.90, 'pus_filled_pimples': 0.85, 'blackheads': 0.80, 'scurring': 0.40}
+    },
 
-    # --- GI CLUSTER (The model will confuse these) ---
-    'GERD': {'specialist': 'Gastroenterologist', 'mandatory': ['stomach_pain', 'acidity'], 'optional': ['chest_pain', 'vomiting']},
-    'Peptic Ulcer': {'specialist': 'Gastroenterologist', 'mandatory': ['stomach_pain', 'vomiting'], 'optional': ['indigestion', 'loss_of_appetite']},
-    'Gastroenteritis': {'specialist': 'Gastroenterologist', 'mandatory': ['stomach_pain', 'diarrhoea', 'vomiting'], 'optional': ['dehydration']},
+    # --- GI CLUSTER ---
+    'GERD': {
+        'specialist': 'Gastroenterologist', 
+        'symptoms': {'stomach_pain': 0.40, 'acidity': 0.95, 'chest_pain': 0.60, 'vomiting': 0.30, 'cough': 0.20}
+    },
+    'Peptic Ulcer': {
+        'specialist': 'Gastroenterologist', 
+        'symptoms': {'stomach_pain': 0.95, 'vomiting': 0.60, 'indigestion': 0.80, 'loss_of_appetite': 0.70, 'internal_itching': 0.10}
+    },
+    'Gastroenteritis': {
+        'specialist': 'Gastroenterologist', 
+        'symptoms': {'stomach_pain': 0.90, 'diarrhoea': 0.95, 'vomiting': 0.85, 'dehydration': 0.60, 'mild_fever': 0.40}
+    },
 
-    # --- OTHERS (More distinct, higher confidence) ---
-    'Allergy': {'specialist': 'Allergist', 'mandatory': ['continuous_sneezing', 'watering_from_eyes'], 'optional': ['itchy_nose']},
-    'Asthma': {'specialist': 'Pulmonologist', 'mandatory': ['breathlessness', 'wheezing'], 'optional': ['cough', 'chest_tightness']},
-    'Migraine': {'specialist': 'Neurologist', 'mandatory': ['headache'], 'optional': ['sensitivity_to_light', 'blurred_and_distorted_vision', 'nausea']},
-    'Hypertension': {'specialist': 'Cardiologist', 'mandatory': ['headache', 'dizziness'], 'optional': ['loss_of_balance', 'chest_pain']},
-    'Type 2 Diabetes': {'specialist': 'Endocrinologist', 'mandatory': ['frequent_urination', 'fatigue'], 'optional': ['increased_thirst', 'excessive_hunger', 'weight_loss']},
-    'Urinary Tract Infection': {'specialist': 'Urologist', 'mandatory': ['frequent_urination', 'burning_micturition'], 'optional': ['bladder_discomfort', 'foul_smell_of_urine']},
-    'Osteoarthritis': {'specialist': 'Rheumatologist', 'mandatory': ['joint_pain'], 'optional': ['knee_pain', 'neck_pain', 'swelling_joints']},
-    'Conjunctivitis (Pink Eye)': {'specialist': 'Ophthalmologist', 'mandatory': ['redness_of_eyes', 'itching_eyes'], 'optional': ['watering_from_eyes', 'pain_in_eye']},
-    'Tonsillitis': {'specialist': 'ENT Specialist', 'mandatory': ['sore_throat'], 'optional': ['difficulty_swallowing', 'high_fever', 'patches_in_throat']}
+    # --- OTHERS ---
+    'Allergy': {
+        'specialist': 'Allergist', 
+        'symptoms': {'continuous_sneezing': 0.90, 'watering_from_eyes': 0.85, 'itchy_nose': 0.80, 'skin_rash': 0.30}
+    },
+    'Asthma': {
+        'specialist': 'Pulmonologist', 
+        'symptoms': {'breathlessness': 0.95, 'wheezing': 0.90, 'cough': 0.80, 'chest_tightness': 0.75}
+    },
+    'Migraine': {
+        'specialist': 'Neurologist', 
+        'symptoms': {'headache': 0.98, 'sensitivity_to_light': 0.85, 'blurred_and_distorted_vision': 0.50, 'nausea': 0.70, 'dizziness': 0.40}
+    },
+    'Hypertension': {
+        'specialist': 'Cardiologist', 
+        'symptoms': {'headache': 0.60, 'dizziness': 0.70, 'loss_of_balance': 0.40, 'chest_pain': 0.30}
+    },
+    'Type 2 Diabetes': {
+        'specialist': 'Endocrinologist', 
+        'symptoms': {'frequent_urination': 0.90, 'fatigue': 0.85, 'increased_thirst': 0.85, 'excessive_hunger': 0.70, 'weight_loss': 0.50, 'blurred_and_distorted_vision': 0.40}
+    },
+    'Urinary Tract Infection': {
+        'specialist': 'Urologist', 
+        'symptoms': {'frequent_urination': 0.95, 'burning_micturition': 0.95, 'bladder_discomfort': 0.80, 'foul_smell_of_urine': 0.70, 'mild_fever': 0.30}
+    },
+    'Osteoarthritis': {
+        'specialist': 'Rheumatologist', 
+        'symptoms': {'joint_pain': 0.95, 'knee_pain': 0.80, 'neck_pain': 0.60, 'swelling_joints': 0.70}
+    },
+    'Conjunctivitis (Pink Eye)': {
+        'specialist': 'Ophthalmologist', 
+        'symptoms': {'redness_of_eyes': 0.98, 'itching_eyes': 0.95, 'watering_from_eyes': 0.85, 'pain_in_eye': 0.70}
+    },
+    'Tonsillitis': {
+        'specialist': 'ENT Specialist', 
+        'symptoms': {'sore_throat': 0.98, 'difficulty_swallowing': 0.90, 'high_fever': 0.70, 'patches_in_throat': 0.60}
+    }
 }
 
 all_symptoms = set()
 specialist_map = {"UNKNOWN_OR_LOW_CONFIDENCE": "General Physician"}
 
 for disease, info in clinical_knowledge.items():
-    all_symptoms.update(info['mandatory'])
-    all_symptoms.update(info['optional'])
+    for sym in info['symptoms'].keys():
+        all_symptoms.add(sym)
     specialist_map[disease] = info['specialist']
 
 all_symptoms = sorted(list(all_symptoms))
 
-# 3. Generate Patients with "Messy" Probabilities
-NUM_PATIENTS = 8000
-NOISE_LEVEL = 0.04   # Bumping global noise to 4% (adds random realistic errors)
+# 3. Generate Patients with Realistic Probabilities
+NUM_PATIENTS = 10000
+NOISE_LEVEL = 0.05 # Small background noise for misdiagnoses
 
 data = []
 disease_names = list(clinical_knowledge.items())
@@ -61,20 +122,26 @@ for _ in range(NUM_PATIENTS):
     for sym in all_symptoms:
         patient_row[sym] = 0
         
-    # Mandatory Symptoms (Dropped to 90% chance to simulate patients forgetting to mention it)
-    for sym in info['mandatory']:
-        if random.random() < 0.90:
+    # Apply symptoms based on their actual probabilities!
+    for sym, prob in info['symptoms'].items():
+        if random.random() < prob:
             patient_row[sym] = 1
             
-    # Optional Symptoms (Patient only mentions 1 or 2)
-    num_optional = random.randint(1, 3)
-    available_optional = info['optional']
-    chosen_optional = random.sample(available_optional, min(num_optional, len(available_optional)))
-    
-    for sym in chosen_optional:
-        patient_row[sym] = 1
+    # CORRELATED SYMPTOM LOGIC
+    # E.g., if diarrhoea is present, dehydration becomes highly likely
+    if patient_row.get('diarrhoea', 0) == 1 and random.random() < 0.85:
+        patient_row['dehydration'] = 1
         
-    # Add pure noise 
+    # If vomiting is present, nausea is almost guaranteed
+    if patient_row.get('vomiting', 0) == 1 and random.random() < 0.95:
+        patient_row['nausea'] = 1
+        
+    # If high_fever is present, chills and fatigue are highly likely
+    if patient_row.get('high_fever', 0) == 1 and random.random() < 0.80:
+        patient_row['chills'] = 1
+        patient_row['fatigue'] = 1
+            
+    # Add pure background noise 
     for sym in all_symptoms:
         if random.random() < NOISE_LEVEL:
             patient_row[sym] = 1
@@ -87,11 +154,11 @@ df = df[cols]
 
 train_df, test_df = train_test_split(df, test_size=0.2, random_state=42)
 
-train_df.to_csv('Training_Realistic.csv', index=False)
-test_df.to_csv('Testing_Realistic.csv', index=False)
+train_df.to_csv('Training.csv', index=False)
+test_df.to_csv('Testing.csv', index=False)
 with open('specialist_mapping.json', 'w') as f:
     json.dump(specialist_map, f, indent=4)
 with open('symptoms_prompt_list.txt', 'w') as f:
     f.write(str(all_symptoms))
 
-print(f"✅ V3 Generation Complete. Controlled Ambiguity injected into {len(all_symptoms)} symptoms.")
+print(f"✅ V4 Generation Complete. Realistic probabilistic modeling applied to {len(all_symptoms)} symptoms.")
