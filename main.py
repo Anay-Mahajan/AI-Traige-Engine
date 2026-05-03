@@ -13,8 +13,10 @@ from google import genai
 
 app = FastAPI(title="AI Healthcare Microservice")
 
+import os
+
 # 2. NEW CLIENT SETUP 
-GEMINI_API_KEY = "AIzaSyBnBri0xux7n0YLO03w9SFiBVqDRveBUZU"
+GEMINI_API_KEY = os.getenv("GEMINI_API_KEY")
 client = genai.Client(api_key=GEMINI_API_KEY)
 MODEL_ID = "gemini-2.5-flash"
 
