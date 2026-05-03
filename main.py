@@ -14,6 +14,9 @@ from google import genai
 app = FastAPI(title="AI Healthcare Microservice")
 
 import os
+from dotenv import load_dotenv
+
+load_dotenv()
 
 # 2. NEW CLIENT SETUP 
 GEMINI_API_KEY = os.getenv("GEMINI_API_KEY")
